@@ -1,6 +1,6 @@
-# Plataforma de Ecommerce — modelagem no MongoDB
+# Plataforma de Ecommerce — Java e MongoDB
 
-Projeto acadêmico de banco NoSQL orientado a documentos, baseado no diagrama de casos de uso **ecomerce.asta**.
+Projeto acadêmico em **Java 17+**, com Maven e o driver oficial síncrono do MongoDB, baseado no diagrama de casos de uso **ecomerce.asta**. A aplicação executa a modelagem, inserções, índices, consultas e o bônus pelo driver Java. Os scripts `mongosh` também acompanham a entrega, conforme o formato solicitado no enunciado.
 
 **Link para a entrega:** https://github.com/joseeric26/e-comerce
 
@@ -20,7 +20,46 @@ Como esse é um diagrama de casos de uso, os campos e as coleções abaixo são 
 
 O foco da atividade é o catálogo. O script 05 complementa o modelo com documentos fictícios de carrinho e pedido. Ele não implementa checkout, reserva de estoque ou comunicação real com um gateway. O carrinho e o pedido são exemplos independentes; não representam uma compra executada pelo script.
 
-## Como executar
+## Como executar em Java
+
+Pré-requisitos: **JDK 17 ou superior**, **Maven 3.9+** e MongoDB em execução. Um JRE sem compilador não é suficiente. Na raiz do repositório:
+
+```bash
+git clone https://github.com/joseeric26/e-comerce.git
+cd e-comerce
+mvn package
+java -jar target/catalogo-mongodb-1.0.0.jar
+```
+
+O JAR inclui as dependências e se conecta, por padrão, a `mongodb://127.0.0.1:27017`, no banco `catalogo_ecommerce_academico`. Para outra conexão, configure `MONGODB_URI`; para mudar o banco, configure `MONGODB_DATABASE`. As credenciais devem ficar fora do código e do GitHub.
+
+Exemplo no PowerShell:
+
+```powershell
+$env:MONGODB_URI = 'mongodb://127.0.0.1:27017'
+$env:MONGODB_DATABASE = 'catalogo_ecommerce_academico'
+java -jar target/catalogo-mongodb-1.0.0.jar
+```
+
+Na IDE, abra o `pom.xml` como projeto Maven, selecione um JDK 17+ e execute `br.com.ecomerce.Main`. A versão do driver é fixada em `5.13.0`. [Guia oficial do driver Java](https://www.mongodb.com/docs/drivers/java/sync/current/get-started/).
+
+| Arquivo Java | Responsabilidade |
+| --- | --- |
+| `src/main/java/br/com/ecomerce/Main.java` | Conexão por variável de ambiente e apresentação dos resultados |
+| `src/main/java/br/com/ecomerce/Catalogo.java` | Documentos, inserções, índices, consultas, explain e modelo complementar |
+| `src/test/java/br/com/ecomerce/CatalogoTest.java` | Teste de integração com MongoDB real e duas execuções |
+| `pom.xml` | Dependências, compilação, teste e criação do JAR executável |
+
+### Testes de integração
+
+Configure `MONGODB_URI` e execute `mvn test`. O teste cria um banco com nome aleatório iniciado por `teste_catalogo_` e apaga somente esse banco ao terminar. A conexão precisa de permissão para criar e remover esse banco de teste. Sem a variável, o teste é marcado como **ignorado**; `mvn package` compila e empacota, mas não comprova integração com o banco. Para executar o teste explicitamente no PowerShell:
+
+```powershell
+$env:MONGODB_URI = 'mongodb://127.0.0.1:27017'
+mvn test
+```
+
+## Como executar os scripts mongosh
 
 Pré-requisitos: MongoDB Community em execução local e `mongosh` instalado. Também é possível usar uma conexão MongoDB Atlas com permissão para criar coleções e índices.
 
@@ -102,6 +141,10 @@ Arrays precisam ter crescimento controlado: o limite BSON é de 16 MiB por docum
 ## Entrega
 
 ### Verificação realizada
+
+A aplicação Java foi compilada com JDK 26.0.2 usando `--release 17`, com driver MongoDB 5.13.0. O comando `mvn package`, conectado ao MongoDB real 8.2.6, terminou com **BUILD SUCCESS** e **1 teste, 0 falhas, 0 erros, 0 ignorados**. O JAR executável foi rodado duas vezes no mesmo banco temporário e manteve exatamente três produtos. O teste de integração também verifica duas chamadas de preparação, resultados dos filtros, índices e coleções complementares. No bônus com `idx_preco`, foram observados `IXSCAN`, `nReturned: 2`, `totalKeysExamined: 2` e `totalDocsExamined: 2`.
+
+A conferência de cada requisito está em [`CONFERENCIA.md`](CONFERENCIA.md).
 
 Os scripts foram executados duas vezes no `mongosh` 2.14.2 contra uma instância temporária real do MongoDB 8.2.6. Foram verificados os três produtos, os resultados esperados dos filtros, a diferença entre condições independentes e `$elemMatch`, os índices, as referências dos documentos complementares e `totalKeysExamined > 0` com `IXSCAN` no bônus.
 
